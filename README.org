@@ -1,0 +1,5 @@
+#+title: sysyphus.el
+
+Control /sys from Emacs!
+
+See sysfs(5) for more details on the /sys directory tree.
