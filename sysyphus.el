@@ -47,26 +47,29 @@
 
 (defvar sysyphus--auto-sleep-timer nil)
 
+;;;; Auto sleep
+
+;;;###autoload
+(define-minor-mode sysyphus-auto-sleep-mode
+  nil
+  :global t
+  ;;;;; Teardown
+  (when sysyphus--auto-sleep-timer
+    (cancel-timer sysyphus--auto-sleep-timer))
+  (when sysyphus-auto-sleep-mode
+    ;;;;; Construction
+    (setq sysyphus--auto-sleep-timer (run-with-idle-timer sysyphus-auto-sleep-delay
+							  :repeat
+							  #'sysyphus-sleep))))
+
 (defcustom sysyphus-auto-sleep-delay 300
   "How many seconds to wait while Emacs is idle before going to sleep automatically when `sysyphus-auto-sleep-mode' is on."
   :type 'number
   :set (lambda (symbol seconds)
 	 (set symbol seconds)
 	 (when sysyphus-auto-sleep-mode
+	   ;; Reinitialize:
 	   (sysyphus-auto-sleep-mode 1))))
-
-;;;###autoload
-(define-minor-mode sysyphus-auto-sleep-mode
-  nil
-  :global t
-  ;;;; Teardown
-  (when sysyphus--auto-sleep-timer
-    (cancel-timer sysyphus--auto-sleep-timer))
-  (when sysyphus-auto-sleep-mode
-    ;;;; Construction
-    (setq sysyphus--auto-sleep-timer (run-with-idle-timer sysyphus-auto-sleep-delay
-							  :repeat
-							  #'sysyphus-sleep))))
 
 
 ;;; Backlight
@@ -121,44 +124,57 @@ If nil on first access, it is set to the first device found alphabetically.")
   :type 'number)
 
 ;;;###autoload
-(defun sysyphus-brightness-up (multiplier)
+(defun sysyphus-brightness-up (&optional multiplier)
   (interactive "p")
   (sysyphus-brightness-set (+ (sysyphus-brightness-get)
-			      (* sysyphus-brightness-increment multiplier))))
+			      (* sysyphus-brightness-increment
+				 (or multiplier 1)))))
 
 ;;;###autoload
-(defun sysyphus-brightness-down (multiplier)
+(defun sysyphus-brightness-down (&optional multiplier)
   (interactive "p")
-  (sysyphus-brightness-up (- multiplier)))
+  (sysyphus-brightness-up (- (or multiplier 1))))
 
-(defcustom sysyphus-auto-dimming 3
-  "Number of `sysyphus-brightness-increment's that `sysyphus-auto-dim-mode' decreases the brightness by."
+;;;; Auto dim
+
+(defcustom sysyphus-brightness-auto-dimming 3
+  "Number of `sysyphus-brightness-increment's that `sysyphus-brightness-auto-dim-mode' decreases the brightness by."
   :type 'number)
 
-(defcustom sysyphus-auto-dim-delay 300
+(defvar sysyphus-brightness--auto-dim-timer nil)
+
+(defvar sysyphus--brightness-pre-dim 100)
+
+(defun sysyphus-brightness-auto-dim-reset ()
+  (sysyphus-brightness-set sysyphus-pre-dim)
+  (remove-hook 'pre-command-hook #'sysyphus-auto-dim-reset))
+
+(defun sysyphus-brightness-auto-dim ()
+  (setq sysyphus-pre-dim (sysyphus-brightness-get))
+  (add-hook 'pre-command-hook #'sysyphus-auto-dim-reset)
+  (sysyphus-brightness-down sysyphus-brightness-auto-dimming))
+
+;;;###autoload
+(define-minor-mode sysyphus-brightness-auto-dim-mode
+  nil
+  :global t
+  ;;;;; Teardown
+  (when sysyphus-brightness--auto-dim-timer
+    (cancel-timer sysyphus-brightness--auto-dim-timer))
+  (when sysyphus-brightness-auto-dim-mode
+    ;;;;; Construction
+    (setq sysyphus-brightness--auto-dim-timer (run-with-idle-timer sysyphus-brightness-auto-dim-delay
+								   :repeat
+								   #'sysyphus-brightness-auto-dim))))
+
+(defcustom sysyphus-brightness-auto-dim-delay 270
   "How many seconds to wait while Emacs is idle before going to sleep automatically when `sysyphus-auto-sleep-mode' is on."
   :type 'number
   :set (lambda (symbol seconds)
 	 (set symbol seconds)
-	 (when sysyphus-auto-dim-mode
-	   (sysyphus-auto-dim-mode 1))))
-
-(defvar sysyphus--pre-dim 100)
-
-(defun sysyphus-auto-dim-reset ()
-  (sysyphus-brightness-set sysyphus-pre-dim))
-
-(defun sysyphus-auto-dim ()
-  (setq sysyphus-pre-dim (sysyphus-brightness-get))
-  (add-hook 'pre-command-hook)
-  )
-
-;;;###autoload
-(define-minor-mode sysyphus-auto-dim-mode
-  nil
-  :global t
-  ;;;; Teardown
-  )
+	 (when sysyphus-brightness-auto-dim-mode
+	   ;; Reinitialize:
+	   (sysyphus-brightness-auto-dim-mode 1))))
 
 (provide 'sysyphus)
 
