@@ -49,6 +49,8 @@
 
 ;;;; Auto sleep
 
+(defvar sysyphus-auto-sleep-delay)
+
 ;;;###autoload
 (define-minor-mode sysyphus-auto-sleep-mode
   nil
@@ -77,15 +79,16 @@
 (defcustom sysyphus-backlight nil
   "Device under /sys/class/backlight/ to use for brightness control.
 
-If nil on first access, it is set to the first device found alphabetically.")
+If nil on first access, it is set to the first device found alphabetically."
+  :type 'string)
 
 (defun sysyphus--get-backlight ()
   (interactive)
   (or sysyphus-backlight
       (setq sysyphus-backlight (car (directory-files
-				  "/sys/class/backlight/"
-				  nil
-				  directory-files-no-dot-files-regexp)))))
+				     "/sys/class/backlight/"
+				     nil
+				     directory-files-no-dot-files-regexp)))))
 
 (defun sysyphus--read-backlight (parameter)
   (string-to-number
@@ -95,7 +98,8 @@ If nil on first access, it is set to the first device found alphabetically.")
 		      parameter))))
 
 (defcustom sysyphus-brightness-message-format "%.0f%% brightness"
-  "Format of the message to echo when getting or setting the screen brightness.")
+  "Format of the message to echo when getting or setting the screen brightness."
+  :type 'string)
 
 ;;;###autoload
 (defun sysyphus-brightness-get ()
@@ -146,13 +150,15 @@ If nil on first access, it is set to the first device found alphabetically.")
 (defvar sysyphus--brightness-pre-dim 100)
 
 (defun sysyphus-brightness-auto-dim-reset ()
-  (sysyphus-brightness-set sysyphus-pre-dim)
-  (remove-hook 'pre-command-hook #'sysyphus-auto-dim-reset))
+  (sysyphus-brightness-set sysyphus--brightness-pre-dim)
+  (remove-hook 'pre-command-hook #'sysyphus-brightness-auto-dim-reset))
 
 (defun sysyphus-brightness-auto-dim ()
-  (setq sysyphus-pre-dim (sysyphus-brightness-get))
-  (add-hook 'pre-command-hook #'sysyphus-auto-dim-reset)
+  (setq sysyphus--brightness-pre-dim (sysyphus-brightness-get))
+  (add-hook 'pre-command-hook #'sysyphus-brightness-auto-dim-reset)
   (sysyphus-brightness-down sysyphus-brightness-auto-dimming))
+
+(defvar sysyphus-brightness-auto-dim-delay)
 
 ;;;###autoload
 (define-minor-mode sysyphus-brightness-auto-dim-mode
@@ -168,7 +174,7 @@ If nil on first access, it is set to the first device found alphabetically.")
 								   #'sysyphus-brightness-auto-dim))))
 
 (defcustom sysyphus-brightness-auto-dim-delay 270
-  "How many seconds to wait while Emacs is idle before going to sleep automatically when `sysyphus-auto-sleep-mode' is on."
+  "How many seconds to wait while Emacs is idle before dimming the brightness when `sysyphus-brightness-auto-dim-mode' is on."
   :type 'number
   :set (lambda (symbol seconds)
 	 (set symbol seconds)
