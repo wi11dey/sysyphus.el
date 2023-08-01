@@ -32,7 +32,6 @@
   :group 'hardware)
 
 (defvar sysyphus-brightness-auto-dim-mode)
-(defvar sysyphus-auto-sleep-mode)
 
 
 ;;; Sleep
@@ -54,14 +53,7 @@
 
 (defvar sysyphus--auto-sleep-timer nil)
 
-(defcustom sysyphus-auto-sleep-delay 300
-  "How many seconds to wait while Emacs is idle before going to sleep automatically when `sysyphus-auto-sleep-mode' is on."
-  :type 'number
-  :set (lambda (symbol seconds)
-	 (set symbol seconds)
-	 (when sysyphus-auto-sleep-mode
-	   ;; Reinitialize:
-	   (sysyphus-auto-sleep-mode 1))))
+(defvar sysyphus-auto-sleep-delay)
 
 ;;;###autoload
 (define-minor-mode sysyphus-auto-sleep-mode
@@ -75,6 +67,16 @@
     (setq sysyphus--auto-sleep-timer (run-with-idle-timer sysyphus-auto-sleep-delay
 							  :repeat
 							  #'sysyphus-sleep))))
+
+(defcustom sysyphus-auto-sleep-delay 300
+  "How many seconds to wait while Emacs is idle before going to sleep automatically when `sysyphus-auto-sleep-mode' is on."
+  :type 'number
+  :set (lambda (symbol seconds)
+	 (set symbol seconds)
+	 (when sysyphus-auto-sleep-mode
+	   ;; Reinitialize:
+	   (sysyphus-auto-sleep-mode 1))))
+
 
 
 ;;; Backlight
@@ -161,14 +163,7 @@ If nil on first access, it is set to the first device found alphabetically."
   (add-hook 'pre-command-hook #'sysyphus-brightness-auto-dim-reset)
   (sysyphus-brightness-down sysyphus-brightness-auto-dimming))
 
-(defcustom sysyphus-brightness-auto-dim-delay 270
-  "How many seconds to wait while Emacs is idle before dimming the brightness when `sysyphus-brightness-auto-dim-mode' is on."
-  :type 'number
-  :set (lambda (symbol seconds)
-	 (set symbol seconds)
-	 (when sysyphus-brightness-auto-dim-mode
-	   ;; Reinitialize:
-	   (sysyphus-brightness-auto-dim-mode 1))))
+(defvar sysyphus-brightness-auto-dim-delay)
 
 ;;;###autoload
 (define-minor-mode sysyphus-brightness-auto-dim-mode
@@ -182,6 +177,16 @@ If nil on first access, it is set to the first device found alphabetically."
     (setq sysyphus-brightness--auto-dim-timer (run-with-idle-timer sysyphus-brightness-auto-dim-delay
 								   :repeat
 								   #'sysyphus-brightness-auto-dim))))
+
+(defcustom sysyphus-brightness-auto-dim-delay 270
+  "How many seconds to wait while Emacs is idle before dimming the brightness when `sysyphus-brightness-auto-dim-mode' is on."
+  :type 'number
+  :set (lambda (symbol seconds)
+	 (set symbol seconds)
+	 (when sysyphus-brightness-auto-dim-mode
+	   ;; Reinitialize:
+	   (sysyphus-brightness-auto-dim-mode 1))))
+
 
 (provide 'sysyphus)
 
